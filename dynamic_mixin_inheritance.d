@@ -17,13 +17,15 @@ T make(T, Args...)(Args args)
   // xxx - generate string mixin
   alias mix = getSymbolsByUDA!(T, dynamic)[0];
 
-  return new class T
+  final static class Mixin : T
   {
-    this() { super(args); }
+    this(Args args) { super(args); }
 
     // static foreach(...)
     mixin mix;
-  };
+  }
+
+  return new Mixin(args);
 }
 
 class Base
@@ -35,7 +37,7 @@ class Base
   {
     alias This = typeof(super);
     static if(__traits(isAbstractFunction, This.name))
-      final override string name() { return This.stringof; }
+      override string name() { return This.stringof; }
   }
 }
 class Child : Base {}
