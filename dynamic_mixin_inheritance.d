@@ -12,17 +12,23 @@ enum dynamic;
 
 T make(T, Args...)(Args args)
 {
-  import std.traits;
+  import std.array  : join;
+  import std.meta   : Filter;
+  import std.format : format;
+  import std.traits : hasUDA;
+  import std.algorithm;
 
-  // xxx - generate string mixin
-  alias mix = getSymbolsByUDA!(T, dynamic)[0];
+  enum isDynamic(alias mem) = hasUDA!(__traits(getMember, T, mem), dynamic);
+  enum mix = [Filter!(isDynamic, __traits(allMembers, T))]
+    .map!(s => "mixin %s;".format(s))
+    .join;
 
   final static class Mixin : T
   {
     this(Args args) { super(args); }
 
     // static foreach(...)
-    mixin mix;
+    mixin(mix);
   }
 
   return new Mixin(args);
@@ -35,9 +41,9 @@ class Base
 
   @dynamic mixin template Name()
   {
-    alias This = typeof(super);
-    static if(__traits(isAbstractFunction, This.name))
-      override string name() { return This.stringof; }
+    alias Dynamic = typeof(super);
+    static if(__traits(isAbstractFunction, Dynamic.name))
+      override string name() { return Dynamic.stringof; }
   }
 }
 class Child : Base {}
