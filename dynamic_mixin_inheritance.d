@@ -10,7 +10,7 @@
 //
 enum dynamic;
 
-T make(T, Args...)(Args args)
+template Dynamic(T)
 {
   import std.array  : join;
   import std.meta   : Filter;
@@ -23,20 +23,28 @@ T make(T, Args...)(Args args)
     .map!(s => "mixin %s;".format(s))
     .join;
 
-  final static class Mixin : T
+  final static class Dynamic : T
   {
-    this(Args args) { super(args); }
+    this(){}
+
+    // Reintroduce super constructors
+    static if(is(typeof(super.__ctor)))
+      alias __ctor = super.__ctor;
 
     // static foreach(...)
     mixin(mix);
   }
+}
 
-  return new Mixin(args);
+T make(T, A...)(auto ref A args)
+{
+  return new Dynamic!T(args);
 }
 
 class Base
 {
-  this(int ex=0){}
+  this(int x = 10, int y=20){}
+  this(string str){}
   abstract string name();
 
   @dynamic mixin template Name()
@@ -51,7 +59,7 @@ class GrandChild : Child {}
 
 void main()
 {
-  Base[] xs = [make!Base(1), make!Child, make!GrandChild];
+  Base[] xs = [make!Base, make!Child, make!GrandChild];
 
   import std.stdio;
   foreach(x; xs)
