@@ -1,4 +1,4 @@
-//          Copyright Daniel Nielsen 2016 - 2016.
+//          Copyright Daniel Nielsen 2016 - 2017.
 // Distributed under the Boost Software License, Version 1.0.
 //    (See accompanying file LICENSE_1_0.txt or copy at
 //          http://www.boost.org/LICENSE_1_0.txt)
@@ -12,16 +12,7 @@ enum dynamic;
 
 template Dynamic(T)
 {
-  import std.array  : join;
-  import std.meta   : Filter;
-  import std.format : format;
-  import std.traits : hasUDA;
-  import std.algorithm;
-
-  enum isDynamic(alias mem) = hasUDA!(__traits(getMember, T, mem), dynamic);
-  enum mix = [Filter!(isDynamic, __traits(allMembers, T))]
-    .map!(s => "mixin %s;".format(s))
-    .join;
+  import std.traits : getSymbolsByUDA;
 
   final static class Dynamic : T
   {
@@ -31,8 +22,8 @@ template Dynamic(T)
     static if(is(typeof(super.__ctor)))
       alias __ctor = super.__ctor;
 
-    // static foreach(...)
-    mixin(mix);
+    static foreach(mix; getSymbolsByUDA!(T, dynamic))
+      mixin mix;
   }
 }
 
